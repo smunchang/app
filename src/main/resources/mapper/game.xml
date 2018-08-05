@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="game">
+
+ <!--   <select id="checkGameUser" parameterType="com.kaybo.app.model.GameUserUser" resultType="boolean" >
+        SELECT EXISTS(
+            SELECT 	game_no
+            FROM	tb_game
+            WHERE	game_no = #{gameNo}
+            AND     user_no = #{userNo}
+        )
+    </select>-->
+
+    <insert id="insertGameUser" parameterType="com.kaybo.app.model.GameUser">
+        INSERT INTO tb_game_user
+        (game_no, user_no, score, game_data, last_update)
+        VALUES
+        (#{gameNo}, #{userNo}, #{score}, #{gameData}, now());
+    </insert>
+
+    <select id="selectGameUser" parameterType="com.kaybo.app.model.GameUser" resultType="com.kaybo.app.model.GameUser">
+        SELECT  a.game_no, a.user_no, a.score, b.rank, b.game_data
+        FROM 	tb_game_user a,
+                (select user_no, game_data, score,
+                    rank() OVER (ORDER BY score) as rank
+                from tb_game_user
+                where game_no = #{gameNo}
+                ) b
+        WHERE 	a.game_no = #{gameNo}
+        AND     a.user_no = #{userNo}
+        AND	a.user_no = b.user_no
+    </select>
+
+    <update id="updateGameScore" parameterType="com.kaybo.app.model.GameUser">
+        UPDATE tb_game_user SET
+            score = #{score},
+            last_update = now()
+        WHERE 	game_no = #{gameNo}
+        AND     user_no = #{userNo}
+    </update>
+
+    <select id="listGameRank" parameterType="java.lang.String" resultType="com.kaybo.app.model.GameUser">
+        SELECT a.rank, a.user_no, b.user_nm, b.user_img, a.score
+        FROM
+            (SELECT user_no, score,
+            rank() OVER (ORDER BY score DESC) as rank
+            FROM tb_game_user
+            WHERE game_no = #{gameNo}) a, tb_user b
+        WHERE a.user_no = b.user_no
+        ORDER BY a.rank
+    </select>
+
+    <update id="updateGameData" parameterType="com.kaybo.app.model.GameUser">
+        UPDATE tb_game_user SET
+        game_data = #{gameData}
+        WHERE 	game_no = #{gameNo}
+        AND     user_no = #{userNo}
+    </update>
+
+    <select id="selectGame" parameterType="java.lang.String" resultType="com.kaybo.app.model.GameInfo">
+        SELECT game_no, game_nm, game_url, game_cash
+        FROM tb_game
+        WHERE 	game_no = #{gameNo}
+    </select>
+
+    <select id="listGame" parameterType="java.lang.String" resultType="com.kaybo.app.model.GameInfo">
+        SELECT game_no, game_nm, game_url, game_cash
+        FROM tb_game
+    </select>
+
+    <insert id="insertGame" parameterType="com.kaybo.app.model.GameInfo">
+        INSERT INTO tb_game
+        (game_no, game_nm, game_url, game_cash)
+        VALUES
+        (#{gameNo}, #{gameNm}, #{gameUrl}, #{gameCash});
+    </insert>
+
+    <insert id="deleteGame" parameterType="String">
+        DELETE FROM tb_game
+        WHERE game_no = #{gameNo};
+    </insert>
+</mapper>
