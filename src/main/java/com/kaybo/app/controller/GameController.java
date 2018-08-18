@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kaybo.app.AppException;
 import com.kaybo.app.model.GameInfo;
+import com.kaybo.app.model.GameItem;
 import com.kaybo.app.model.GameUser;
 import com.kaybo.app.model.User;
 import org.apache.commons.logging.Log;
@@ -30,8 +31,8 @@ public class GameController {
 
     private static Log logger = LogFactory.getLog(GameController.class);
 
-    @Value("${cash.url}")
-    private String cashUrl;
+    @Value("${cash.sf1.url}")
+    private String cashSf1Url;
 
     @Autowired
     private SqlSessionTemplate sqlSessionTemplate;
@@ -45,10 +46,56 @@ public class GameController {
         GameUser game = new GameUser();
         game.setGameNo(gameNo);
         game.setUserNo(userNo);
-        GameUser gameResult = sqlSessionTemplate.selectOne("game.selectGameUser", game);
+        GameUser gameResult = sqlSessionTemplate.selectOne("game.selectGameUserDetail", game);
 
+        long cash = 0;
         User user = sqlSessionTemplate.selectOne("user.selectUser", userNo);
 
+        GameInfo gameInfo = sqlSessionTemplate.selectOne("game.selectGame", gameNo);
+        //User user = sqlSessionTemplate.selectOne("user.selectUser", userNo);
+        if(gameInfo.getGameCash().equals("SF1")){
+            RestTemplate restTemplate = new RestTemplate();
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+
+            MultiValueMap<String, String> map= new LinkedMultiValueMap<String, String>();
+            map.add("userno",userNo);
+            map.add("userid",user.getUserId());
+
+            HttpEntity<?> httpEntity = new HttpEntity<Object>(map, headers);
+
+            try{
+                ResponseEntity<String> response = restTemplate.exchange(cashSf1Url + "/GetSF1Balance", HttpMethod.POST, httpEntity, String.class);
+                //{retcode=0, gcashreal=0.00, gcashbonus=9800.00, retmsg=ok}
+                logger.info(response.getBody());
+                if(response.getStatusCode() == HttpStatus.OK){
+                    Map<String,String> map1 = new HashMap<String,String>();
+                    ObjectMapper mapper = new ObjectMapper();
+                    map1 = mapper.readValue(response.getBody(), new TypeReference<HashMap<String,String>>(){});
+
+                    logger.info(response.getBody());
+                    if(map1.get("retcode").equals("0")){
+                        double gcashreal = Double.parseDouble(map1.get("gcashreal"));
+                        double gcashbonus = Double.parseDouble(map1.get("gcashbonus"));
+                        cash = (long) (gcashreal + gcashbonus);
+                    }else{
+                        throw new AppException(-4444, "fail to get balance");
+                    }
+
+
+                }else{
+                    throw new AppException(-5678, "Bad Request");
+                }
+            }catch (Exception ex){
+                ex.printStackTrace();
+            }
+
+
+
+
+        }else{
+
+        }
 
         if(gameResult != null){
             if(gameResult.getGameData() != null){
@@ -56,18 +103,21 @@ public class GameController {
                 ObjectMapper mapper = new ObjectMapper();
                 map = mapper.readValue(gameResult.getGameDataString(), new TypeReference<HashMap<String,String>>(){});
                 gameResult.setGameData(map);*/
+                gameResult.setUserId(user.getUserId());
                 gameResult.setUserNm(user.getUserNm());
                 gameResult.setUserImg(user.getUserImg());
             }
 
-            return gameResult;
+
         }else{
             gameResult = new GameUser();
             gameResult.setScore(0);
+            gameResult.setUserId(user.getUserId());
             gameResult.setUserNm(user.getUserNm());
             gameResult.setUserImg(user.getUserImg());
-            return gameResult;
         }
+        gameResult.setCash(cash);
+        return gameResult;
     }
 
     @PostMapping("/game/{gameNo}/score")
@@ -117,8 +167,8 @@ public class GameController {
         //game.setGameDataString(mapper.writeValueAsString(gameData));
         game.setGameData(gameData);
 
-        GameUser result = sqlSessionTemplate.selectOne("game.selectGameUser", game);
-        if(result == null){
+        boolean guExist = sqlSessionTemplate.selectOne("game.existGameUser", game);
+        if(!guExist){
             sqlSessionTemplate.insert("game.insertGameUser", game);
         }else{
             sqlSessionTemplate.update("game.updateGameData", game);
@@ -130,37 +180,36 @@ public class GameController {
     @PostMapping("/game/{gameNo}/cash")
     @ResponseBody
     public void setGameCash(@RequestHeader(value="userNo") String userNo,
-                            @PathVariable String gameNo, @RequestBody GameUser game,
+                            @PathVariable String gameNo, @RequestBody GameItem gameItem,
                             HttpServletRequest httpServletRequest){
 
-        //TODO
-        //kpcash 연동
         GameInfo gameInfo = sqlSessionTemplate.selectOne("game.selectGame", gameNo);
         User user = sqlSessionTemplate.selectOne("user.selectUser", userNo);
         if(gameInfo.getGameCash().equals("SF1")){
-            RestTemplate restTemplate = new RestTemplate();
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-
-            MultiValueMap<String, String> map= new LinkedMultiValueMap<String, String>();
-            map.add("userno",userNo);
-            map.add("userid",user.getUserNm());
-            map.add("gamecode", "");
-            map.add("itemid", "");
-            map.add("itemname", "");
-            map.add("chargeamt", game.getCash() + "");
-            map.add("ipaddr", httpServletRequest.getRemoteAddr());
-
-            HttpEntity<?> httpEntity = new HttpEntity<Object>(map, headers);
-
             try{
-                ResponseEntity<Object> response = restTemplate.exchange(cashUrl, HttpMethod.POST, httpEntity, Object.class);
+                RestTemplate restTemplate = new RestTemplate();
+                HttpHeaders headers = new HttpHeaders();
+                headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+
+                MultiValueMap<String, String> map= new LinkedMultiValueMap<String, String>();
+                map.add("userno",userNo);
+                map.add("userid","fhldevkp"); //user.getUserId()
+                map.add("gamecode", gameInfo.getGameCash());
+                map.add("itemid", gameItem.getItemId());
+                map.add("itemname", gameItem.getItemName());
+                map.add("chargeamt", gameItem.getCash() + "");
+                map.add("ipaddr", httpServletRequest.getRemoteAddr());
+
+                logger.info(map.toString());
+                HttpEntity<?> httpEntity = new HttpEntity<Object>(map, headers);
+
+
+                ResponseEntity<Object> response = restTemplate.exchange(cashSf1Url + "/PurchaseSF1Item", HttpMethod.POST, httpEntity, Object.class);
+                logger.info(response.getBody());
             }catch (Exception ex){
                 ex.printStackTrace();
             }
 
-
-            //logger.info(response.getBody());
 
         }else{
 
@@ -172,10 +221,10 @@ public class GameController {
 
         if(kpCashResult){
             ObjectMapper mapper = new ObjectMapper();
-            //GameUser game = new GameUser();
+            GameUser game = new GameUser();
             game.setGameNo(gameNo);
             game.setUserNo(userNo);
-            //game.setGameData(mapper.writeValueAsString(game.getGameData()));
+            game.setGameData(gameItem.getGameData());
 
             GameUser result = sqlSessionTemplate.selectOne("game.selectGameUser", game);
             if(result == null){
@@ -192,4 +241,21 @@ public class GameController {
     }
 
 
+
+    @GetMapping("/game/{gameNo}/gamedata")
+    @ResponseBody
+    public String getGameData(@RequestHeader(value="userNo") String userNo,
+                                @PathVariable String gameNo) throws IOException {
+
+        GameUser game = new GameUser();
+        game.setGameNo(gameNo);
+        game.setUserNo(userNo);
+        GameUser gameUser = sqlSessionTemplate.selectOne("game.selectGameUser", game);
+
+        if(gameUser == null){
+            sqlSessionTemplate.insert("game.insertGameUser", game);
+            gameUser = sqlSessionTemplate.selectOne("game.selectGameUser", game);
+        }
+        return gameUser.getGameData();
+    }
 }

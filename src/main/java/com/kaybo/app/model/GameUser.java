@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 public class GameUser {
     private String gameNo;
     private String userNo;
+    private String userId;
     private String userNm;
     private String userImg;
     private long score;
@@ -17,6 +18,7 @@ public class GameUser {
     @JsonIgnore
     private long lastUpdate;
     private long cash;
+
 
     private String gameNm;
     private String gameUrl;
@@ -107,5 +109,13 @@ public class GameUser {
 
     public void setGameUrl(String gameUrl) {
         this.gameUrl = gameUrl;
+    }
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
     }
 }

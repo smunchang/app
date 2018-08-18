@@ -15,7 +15,7 @@
     </select>
 
     <select id="selectUser" parameterType="java.lang.String" resultType="com.kaybo.app.model.User">
-        SELECT  user_no, user_nm, user_key, user_img
+        SELECT  user_no, user_id, user_nm, user_key, user_img
         FROM 	tb_user
         WHERE 	user_no = #{userNo}
     </select>
@@ -23,8 +23,8 @@
 
     <insert id="insertUser" parameterType="com.kaybo.app.model.User">
         INSERT INTO tb_user
-        (user_no, user_key, user_nm, user_img)
+        (user_no, user_id, user_key, user_nm, user_img)
         VALUES
-        (#{userNo}, #{userKey}, #{userNm}, #{userImg});
+        (#{userNo}, #{userId}, #{userKey}, #{userNm}, #{userImg});
     </insert>
 </mapper>

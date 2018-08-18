@@ -65,8 +65,13 @@ public class AspectService {
                     ObjectMapper mapper = new ObjectMapper();
                     map = mapper.readValue(response.getBody(), new TypeReference<HashMap<String,String>>(){});
 
+                    logger.info(response.getBody());
+                    //Todo response check
+//User(String userNo, String userId, String userKey, String userNm, String userImg)
+                    User u = new User(userNo, map.get("UserID"), userKey, map.get("UserName"), map.get("profileImage"));
+                    //User u = new User(map.get("UserUID"), map.get("UserID"), userKey, map.get("UserName"), map.get("profileImage"));
+                    //User u = new User(map.get("memberId"), map.get("nickName"), userKey, map.get("userName"), map.get("profileImage"));
 
-                    User u = new User(userNo, userKey, map.get("nickName"), map.get("profileImage"));
                     sqlSessionTemplate.insert("user.insertUser", u);
                 }else{
                     throw new AppException(9999, "Authentication Error");

@@ -1,5 +1,6 @@
 package com.kaybo.app;
 
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
@@ -14,7 +15,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
         registry.addInterceptor(new AppInterceptor()).addPathPatterns("/**");
     }
 
-    @Override
+/*    @Override
     public void addCorsMappings(CorsRegistry registry)
     {
         registry.addMapping("/**").allowedOrigins("*")
@@ -24,7 +25,21 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
                 //.allowedOrigins("http://localhost:8080")
                 //.allowedHeaders("userNo", "userKey");
-    }
+    }*/
 
+   /* @Bean
+    public WebMvcConfigurer webMvcConfigurer() {
+        return new WebMvcConfigurer() {
+            @Override
+            public void addCorsMappings(CorsRegistry registry) {
+                registry.addMapping("/**")
+                        .allowedOrigins("*")
+                        .allowedMethods("*")
+                        .allowedHeaders("*")
+                        .allowCredentials(false)
+                        .maxAge(3600);
+            }
+        };
+    }*/
 
 }
