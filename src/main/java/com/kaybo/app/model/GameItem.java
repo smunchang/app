@@ -10,6 +10,7 @@ public class GameItem {
     private String itemId;
     private String itemName;
     private String gameData;
+    private String ipAddr;
 
     public long getCash() {
         return cash;
@@ -41,5 +42,13 @@ public class GameItem {
 
     public void setGameData(String gameData) {
         this.gameData = gameData;
+    }
+
+    public String getIpAddr() {
+        return ipAddr;
+    }
+
+    public void setIpAddr(String ipAddr) {
+        this.ipAddr = ipAddr;
     }
 }

@@ -48,17 +48,29 @@ public class AspectService {
         String userNo = request.getHeader("userNo") ;
         String userKey = request.getHeader("userKey") ;
 
-        User user = sqlSessionTemplate.selectOne("user.selectUser", userNo);
-        if(user == null){
 
-            try{
+        if(request.getServletPath().contains("/user")){
+
+        }else{
+            User user = sqlSessionTemplate.selectOne("user.selectUser", userNo);
+            if(!userKey.equals(user.getUserKey())){
+                throw new AppException(9999, "Authentication Error");
+            }
+        }
+
+        /*    try{
                 RestTemplate restTemplate = new RestTemplate();
                 HttpHeaders headers = new HttpHeaders();
                 headers.add("memberid", userNo);
                 headers.add("authorization", userKey);
                 headers.setContentType(MediaType.APPLICATION_JSON);
+                ResponseEntity<String> response = null;
+                try{
+                    response = restTemplate.exchange(authUrl, HttpMethod.GET, new HttpEntity(headers), String.class);
 
-                ResponseEntity<String> response = restTemplate.exchange(authUrl, HttpMethod.POST, new HttpEntity(headers), String.class);
+                }catch (Exception ex){
+                    ex.printStackTrace();
+                }
 
                 if(response.getStatusCode() == HttpStatus.OK){
                     Map<String,String> map = new HashMap<String,String>();
@@ -66,11 +78,10 @@ public class AspectService {
                     map = mapper.readValue(response.getBody(), new TypeReference<HashMap<String,String>>(){});
 
                     logger.info(response.getBody());
-                    //Todo response check
 //User(String userNo, String userId, String userKey, String userNm, String userImg)
-                    User u = new User(userNo, map.get("UserID"), userKey, map.get("UserName"), map.get("profileImage"));
+                    //User u = new User(userNo, map.get("UserID"), userKey, map.get("UserName"), map.get("profileImage"));
                     //User u = new User(map.get("UserUID"), map.get("UserID"), userKey, map.get("UserName"), map.get("profileImage"));
-                    //User u = new User(map.get("memberId"), map.get("nickName"), userKey, map.get("userName"), map.get("profileImage"));
+                    User u = new User(map.get("memberId"), map.get("nickName"), userKey, map.get("userName"), map.get("profileImage"));
 
                     sqlSessionTemplate.insert("user.insertUser", u);
                 }else{
@@ -86,7 +97,7 @@ public class AspectService {
             if(!userKey.equals(user.getUserKey())){
                 throw new AppException(9999, "Authentication Error");
             }
-        }
+        }*/
 
     }
 

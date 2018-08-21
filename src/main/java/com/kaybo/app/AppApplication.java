@@ -24,6 +24,7 @@ import javax.servlet.ServletContextListener;
 import javax.sql.DataSource;
 
 @SpringBootApplication
+//@EnableAutoConfiguration(exclude = {ErrorMvcAutoConfiguration.class})
 public class AppApplication extends SpringBootServletInitializer {
 
 	private static Log logger = LogFactory.getLog(AppApplication.class);

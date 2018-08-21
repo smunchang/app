@@ -1,11 +1,12 @@
 package com.kaybo.app.model;
 
 public class User {
-    private String userNo;
-    private String userId;
-    private String userKey;
-    private String userNm;
-    private String userImg;
+    private String userNo = null;
+    private String userId = null;
+
+    private String userNm = null;
+    private String userImg = null;
+    private String userKey = null;
 
     public User(String userNo, String userId, String userKey, String userNm, String userImg) {
         this.userNo = userNo;
@@ -31,14 +32,6 @@ public class User {
         this.userId = userId;
     }
 
-    public String getUserKey() {
-        return userKey;
-    }
-
-    public void setUserKey(String userKey) {
-        this.userKey = userKey;
-    }
-
     public String getUserNm() {
         return userNm;
     }
@@ -53,5 +46,13 @@ public class User {
 
     public void setUserImg(String userImg) {
         this.userImg = userImg;
+    }
+
+    public String getUserKey() {
+        return userKey;
+    }
+
+    public void setUserKey(String userKey) {
+        this.userKey = userKey;
     }
 }

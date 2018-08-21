@@ -15,7 +15,7 @@
     </select>
 
     <select id="selectUser" parameterType="java.lang.String" resultType="com.kaybo.app.model.User">
-        SELECT  user_no, user_id, user_nm, user_key, user_img
+        SELECT  user_no, user_id, COALESCE(user_nm,'') as user_nm, user_key, COALESCE(user_img,'')
         FROM 	tb_user
         WHERE 	user_no = #{userNo}
     </select>
@@ -27,4 +27,13 @@
         VALUES
         (#{userNo}, #{userId}, #{userKey}, #{userNm}, #{userImg});
     </insert>
+
+    <update id="updateUser" parameterType="com.kaybo.app.model.GameUser">
+        UPDATE tb_user SET
+            user_id = #{userId},
+            user_key = #{userKey},
+            user_nm = #{userNm},
+            user_img = #{userImg}
+        WHERE 	user_no = #{userNo}
+    </update>
 </mapper>
