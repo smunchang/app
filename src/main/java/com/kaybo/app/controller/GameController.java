@@ -68,6 +68,7 @@ public class GameController {
 
             }catch (Exception ex){
                 ex.printStackTrace();
+                throw new AppException(-44241, "Authentication Error");
             }
 
             if(response.getStatusCode() == HttpStatus.OK){
@@ -81,11 +82,11 @@ public class GameController {
 
                 sqlSessionTemplate.update("user.updateUser", u);
             }else{
-                throw new AppException(9999, "Authentication Error");
+                throw new AppException(-24241, "Authentication Error");
             }
         }catch (Exception e){
             e.printStackTrace();
-            throw new AppException(9999, "Authentication Error");
+            throw new AppException(-42424, "Authentication Error");
         }
 
         GameUser game = new GameUser();
@@ -135,6 +136,7 @@ public class GameController {
                 }
             }catch (Exception ex){
                 ex.printStackTrace();
+                throw new AppException(-56789, "Bad Request");
             }
 
         }else{
