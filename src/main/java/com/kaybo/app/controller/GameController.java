@@ -77,7 +77,7 @@ public class GameController {
 
                 logger.info(response.getBody());
 //User(String userNo, String userId, String userKey, String userNm, String userImg)
-                User u = new User(map.get("memberId"), map.get("nickname"), userKey, map.get("userName"), map.get("profileImage"));
+                User u = new User(map.get("memberId"), map.get("nickName"), userKey, map.get("userName"), map.get("profileImage"));
 
                 sqlSessionTemplate.update("user.updateUser", u);
             }else{
@@ -97,7 +97,8 @@ public class GameController {
         User uuu = sqlSessionTemplate.selectOne("user.selectUser", userNo);
 
         logger.info(uuu.getUserNm());
-        GameInfo gameInfo = sqlSessionTemplate.selectOne("game.selectGame", gameNo);
+        cash = getBalance(gameNo, userNo, uuu.getUserId());
+        /*GameInfo gameInfo = sqlSessionTemplate.selectOne("game.selectGame", gameNo);
         //User user = sqlSessionTemplate.selectOne("user.selectUser", userNo);
         if(gameInfo.getGameCash().equals("SF1")){
             RestTemplate restTemplate = new RestTemplate();
@@ -136,12 +137,9 @@ public class GameController {
                 ex.printStackTrace();
             }
 
-
-
-
         }else{
 
-        }
+        }*/
 
         if(gameResult != null){
             if(gameResult.getGameData() != null){
@@ -164,6 +162,56 @@ public class GameController {
         }
         gameResult.setCash(cash);
         return gameResult;
+    }
+
+
+    private long getBalance(String gameNo, String userNo, String userId){
+        long cash = 0;
+
+        GameInfo gameInfo = sqlSessionTemplate.selectOne("game.selectGame", gameNo);
+        if(gameInfo.getGameCash().equals("SF1")){
+            RestTemplate restTemplate = new RestTemplate();
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+
+            MultiValueMap<String, String> map= new LinkedMultiValueMap<String, String>();
+            map.add("userno",userNo);
+            map.add("userid",userNo);
+
+            HttpEntity<?> httpEntity = new HttpEntity<Object>(map, headers);
+
+            try{
+                ResponseEntity<String> response = restTemplate.exchange(cashSf1Url + "/GetSF1Balance", HttpMethod.POST, httpEntity, String.class);
+                //{retcode=0, gcashreal=0.00, gcashbonus=9800.00, retmsg=ok}
+                logger.info(response.getBody());
+                if(response.getStatusCode() == HttpStatus.OK){
+                    Map<String,String> map1 = new HashMap<String,String>();
+                    ObjectMapper mapper = new ObjectMapper();
+                    map1 = mapper.readValue(response.getBody(), new TypeReference<HashMap<String,String>>(){});
+
+                    logger.info(response.getBody());
+                    if(map1.get("retcode").equals("0")){
+                        double gcashreal = Double.parseDouble(map1.get("gcashreal"));
+                        double gcashbonus = Double.parseDouble(map1.get("gcashbonus"));
+                        cash = (long) (gcashreal + gcashbonus);
+                    }else{
+                        throw new AppException(-4444, "fail to get balance");
+                    }
+
+
+                }else{
+                    throw new AppException(-5678, "Bad Request");
+                }
+            }catch (Exception ex){
+                ex.printStackTrace();
+            }
+
+        }else{
+
+        }
+
+        return cash;
+
     }
 
     @PostMapping("/game/{gameNo}/score")
@@ -233,6 +281,11 @@ public class GameController {
         GameInfo gameInfo = sqlSessionTemplate.selectOne("game.selectGame", gameNo);
         User user = sqlSessionTemplate.selectOne("user.selectUser", userNo);
         if(gameInfo.getGameCash().equals("SF1")){
+
+            long cash = getBalance(gameNo, userNo, user.getUserId());
+            if(cash < gameItem.getCash()){
+                throw new AppException( -123789, "insufficient balance");
+            }
             try{
                 RestTemplate restTemplate = new RestTemplate();
                 HttpHeaders headers = new HttpHeaders();
@@ -245,7 +298,12 @@ public class GameController {
                 map.add("itemid", gameItem.getItemId());
                 map.add("itemname", gameItem.getItemName());
                 map.add("chargeamt", gameItem.getCash() + "");
-                map.add("ipaddr", gameItem.getIpAddr());
+
+                String ipAddr = gameItem.getIpAddr();
+                if(ipAddr == null || ipAddr.trim().equals("")){
+                    ipAddr = httpServletRequest.getRemoteAddr();
+                }
+                map.add("ipaddr", ipAddr);
 
                 logger.info(map.toString());
                 HttpEntity<?> httpEntity = new HttpEntity<Object>(map, headers);
@@ -312,15 +370,16 @@ public class GameController {
                 map.add("userid",user.getUserId());
                 map.add("username",user.getUserNm());
                 map.add("gamecode", gameInfo.getGameCash());
-                Date date = new Date(); //2018 0731 001
-//todo "retcode=9070, retmsg=Payloadkey is wrong"
-                SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
-                map.add("payloadkey", "key" + System.nanoTime() +"");
+                map.add("payloadkey", System.nanoTime() +"");
                 map.add("flags", "5");
                 map.add("cashtype", "2");
                 map.add("gcashamt", gameItem.getCash() + "");
                 map.add("paytoolname", "issue GameMoney");
-                map.add("ipaddr", gameItem.getIpAddr());
+                String ipAddr = gameItem.getIpAddr();
+                if(ipAddr == null || ipAddr.trim().equals("")){
+                    ipAddr = httpServletRequest.getRemoteAddr();
+                }
+                map.add("ipaddr", ipAddr);
 
                 logger.info(map.toString());
                 HttpEntity<?> httpEntity = new HttpEntity<Object>(map, headers);
