@@ -376,7 +376,7 @@ public class GameController {
                 map.add("flags", "5");
                 map.add("cashtype", "2");
                 map.add("gcashamt", gameItem.getCash() + "");
-                map.add("paytoolname", "issue GameMoney");
+                map.add("paytoolname", gameItem.getPaytoolName());
                 String ipAddr = gameItem.getIpAddr();
                 if(ipAddr == null || ipAddr.trim().equals("")){
                     ipAddr = httpServletRequest.getRemoteAddr();

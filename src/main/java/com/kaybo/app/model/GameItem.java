@@ -11,6 +11,7 @@ public class GameItem {
     private String itemName;
     private String gameData;
     private String ipAddr;
+    private String paytoolName;
 
     public long getCash() {
         return cash;
@@ -50,5 +51,13 @@ public class GameItem {
 
     public void setIpAddr(String ipAddr) {
         this.ipAddr = ipAddr;
+    }
+
+    public String getPaytoolName() {
+        return paytoolName;
+    }
+
+    public void setPaytoolName(String paytoolName) {
+        this.paytoolName = paytoolName;
     }
 }
